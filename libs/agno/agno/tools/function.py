@@ -634,7 +634,12 @@ class Function(BaseModel):
             from agno.team.team import Team
 
             framework_types = (Agent, Team)
-            for hint in hints.values():
+            for hint_name, hint in hints.items():
+                # get_type_hints includes the return annotation under "return";
+                # a framework return type is not an injected parameter and must
+                # not disable argument validation.
+                if hint_name == "return":
+                    continue
                 if isinstance(hint, type) and issubclass(hint, framework_types):
                     return func
         except Exception:
