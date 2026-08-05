@@ -530,7 +530,9 @@ class StudioTools(Toolkit):
         from agno.agent.agent import Agent
 
         try:
-            agent = Agent.from_dict(config, registry=self.registry)
+            # Lenient on purpose: read/edit tools must load a component whose
+            # references are broken so an edit can repair it.
+            agent = Agent.from_dict(config, registry=self.registry, strict=False)
             agent.id = agent_id
             agent.db = self.db
             return agent
@@ -547,7 +549,9 @@ class StudioTools(Toolkit):
         from agno.team.team import Team
 
         try:
-            team = Team.from_dict(config, db=self.db, registry=self.registry)
+            # Lenient on purpose: read/edit tools must load a component whose
+            # references are broken so an edit can repair it.
+            team = Team.from_dict(config, db=self.db, registry=self.registry, strict=False)
             team.id = team_id
             team.db = self.db
             return team
@@ -564,7 +568,9 @@ class StudioTools(Toolkit):
         from agno.workflow.workflow import Workflow
 
         try:
-            wf = Workflow.from_dict(config, db=self.db, registry=self.registry)
+            # Lenient on purpose: read/edit tools must load a component whose
+            # references are broken so an edit can repair it.
+            wf = Workflow.from_dict(config, db=self.db, registry=self.registry, strict=False)
             wf.id = workflow_id
             wf.db = self.db
             return wf
