@@ -470,6 +470,11 @@ class Function(BaseModel):
 
                 framework_types = (Agent, Team, RunContext, Image, Video, Audio, File)
                 for param_name, hint in list(type_hints.items()):
+                    # get_type_hints includes the return annotation under
+                    # "return"; it is not a parameter and must not be excluded
+                    # or injected.
+                    if param_name == "return":
+                        continue
                     if isinstance(hint, type) and issubclass(hint, framework_types):
                         del type_hints[param_name]
                         excluded_params.append(param_name)
@@ -971,6 +976,10 @@ class FunctionCall(BaseModel):
 
             hints = get_type_hints(self.function.entrypoint)  # type: ignore
             for param_name, hint in hints.items():
+                # get_type_hints includes the return annotation under "return";
+                # injecting it would pass an invalid "return" keyword argument.
+                if param_name == "return":
+                    continue
                 if param_name in entrypoint_args:
                     continue  # Already handled by name-based injection
                 if isinstance(hint, type):
