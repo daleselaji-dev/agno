@@ -20,6 +20,12 @@ from agno.utils.log import log_debug, log_error, log_warning
 from agno.utils.openai import _format_file_for_message, audio_to_message, images_to_message
 from agno.utils.reasoning import extract_thinking_content
 
+
+def _numeric_token_count(value: Any) -> int:
+    """Return provider token counts only when they have the expected integer type."""
+    return value if isinstance(value, int) else 0
+
+
 try:
     from openai import APIConnectionError, APIStatusError, RateLimitError
     from openai import AsyncOpenAI as AsyncOpenAIClient
@@ -1024,14 +1030,14 @@ class OpenAIChat(Model):
 
         # Add the prompt_tokens_details field
         if prompt_token_details := response_usage.prompt_tokens_details:
-            metrics.audio_input_tokens = prompt_token_details.audio_tokens or 0
-            metrics.cache_read_tokens = prompt_token_details.cached_tokens or 0
-            metrics.cache_write_tokens = getattr(prompt_token_details, "cache_write_tokens", 0) or 0
+            metrics.audio_input_tokens = _numeric_token_count(prompt_token_details.audio_tokens)
+            metrics.cache_read_tokens = _numeric_token_count(prompt_token_details.cached_tokens)
+            metrics.cache_write_tokens = _numeric_token_count(getattr(prompt_token_details, "cache_write_tokens", 0))
 
         # Add the completion_tokens_details field
         if completion_tokens_details := response_usage.completion_tokens_details:
-            metrics.audio_output_tokens = completion_tokens_details.audio_tokens or 0
-            metrics.reasoning_tokens = completion_tokens_details.reasoning_tokens or 0
+            metrics.audio_output_tokens = _numeric_token_count(completion_tokens_details.audio_tokens)
+            metrics.reasoning_tokens = _numeric_token_count(completion_tokens_details.reasoning_tokens)
 
         metrics.audio_total_tokens = metrics.audio_input_tokens + metrics.audio_output_tokens
         metrics.cost = getattr(response_usage, "cost", None)

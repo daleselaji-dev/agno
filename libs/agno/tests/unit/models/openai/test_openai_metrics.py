@@ -7,11 +7,10 @@ Tests that the collect_metrics_on_completion flag works correctly for OpenAI mod
 from typing import Optional
 
 import pytest
-from openai.types.completion_usage import CompletionUsage
-from openai.types.responses import ResponseUsage
-
 from agno.models.openai.chat import OpenAIChat
 from agno.models.openai.responses import OpenAIResponses
+from openai.types.completion_usage import CompletionUsage
+from openai.types.responses import ResponseUsage
 
 
 class MockCompletionUsage:
@@ -134,6 +133,36 @@ def test_openai_get_metrics_computes_audio_total_tokens():
     assert metrics.audio_input_tokens == 11
     assert metrics.audio_output_tokens == 13
     assert metrics.audio_total_tokens == 24
+
+
+def test_openai_get_metrics_ignores_non_numeric_detail_token_counts():
+    """Provider-specific non-numeric detail fields must not abort metrics parsing."""
+
+    class MockPromptTokensDetails:
+        audio_tokens = "N/A"
+        cached_tokens = "N/A"
+        cache_write_tokens = "N/A"
+
+    class MockCompletionTokensDetails:
+        audio_tokens = "N/A"
+        reasoning_tokens = "N/A"
+
+    usage = MockCompletionUsage(
+        prompt_tokens=100,
+        completion_tokens=20,
+        total_tokens=120,
+        prompt_tokens_details=MockPromptTokensDetails(),
+        completion_tokens_details=MockCompletionTokensDetails(),
+    )
+
+    metrics = OpenAIChat(id="gpt-4o")._get_metrics(usage)  # type: ignore[arg-type]
+
+    assert metrics.audio_input_tokens == 0
+    assert metrics.audio_output_tokens == 0
+    assert metrics.audio_total_tokens == 0
+    assert metrics.cache_read_tokens == 0
+    assert metrics.cache_write_tokens == 0
+    assert metrics.reasoning_tokens == 0
 
 
 @pytest.mark.parametrize(
